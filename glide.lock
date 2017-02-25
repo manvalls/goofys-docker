@@ -1,31 +1,31 @@
-hash: 8aea58b5d9c832c8fef925ed770254eba7043f20dfa8d58cdda7b857a06c69e3
-updated: 2016-05-17T08:31:29.866098806Z
+hash: 8d1c2ceaa460b7b275837ce4fc10e2b4bb91fd0e907045ebc9c1dd593a7f7a24
+updated: 2017-02-21T21:32:30.200423975-08:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 7bad22e9cff8295edef29844b4daa55ecfb057b9
   subpackages:
   - aws
-  - aws/credentials
   - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
   - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/defaults
+  - aws/ec2metadata
   - aws/request
   - aws/session
-  - service/s3
-  - aws/awsutil
-  - aws/client/metadata
-  - aws/client
-  - aws/defaults
   - private/endpoints
   - private/protocol
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
   - private/protocol/restxml
+  - private/protocol/xml/xmlutil
   - private/signer/v4
   - private/waiter
-  - aws/credentials/ec2rolecreds
-  - aws/ec2metadata
-  - private/protocol/query
-  - private/protocol/rest
-  - private/protocol/xml/xmlutil
-  - private/protocol/query/queryutil
+  - service/s3
 - name: github.com/codegangsta/cli
   version: 0eb4e0be6c214f8904ef6989b11072c7b897c657
 - name: github.com/coreos/go-systemd
@@ -44,15 +44,15 @@ imports:
 - name: github.com/docker/go-plugins-helpers
   version: b6b774486d89219eba2d2b72ed50d32880167671
   subpackages:
-  - volume
   - sdk
+  - volume
 - name: github.com/go-ini/ini
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
 - name: github.com/jacobsa/fuse
   version: 0b9db0a706bc0248f8a37cba1dd5372b4c9a8b72
   subpackages:
-  - fuseutil
   - fuseops
+  - fuseutil
   - internal/buffer
   - internal/freelist
   - internal/fusekernel
@@ -75,8 +75,8 @@ imports:
 - name: github.com/shirou/gopsutil
   version: bae75faa5ad1212d3e80f11f5e9cd147c6be9198
   subpackages:
-  - mem
   - internal/common
+  - mem
 - name: github.com/Sirupsen/logrus
   version: cd7d1bbe41066b6c1f19780f895901052150a575
   subpackages:
@@ -91,4 +91,6 @@ imports:
   subpackages:
   - unix
   - windows
-devImports: []
+testImports:
+- name: gopkg.in/check.v1
+  version: 20d25e2804050c1cd24a7eea1e7a6447dd0e74ec
