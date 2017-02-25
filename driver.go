@@ -1,21 +1,23 @@
 package main
 
 import (
+	"strconv"
 	"sync"
 
 	"fmt"
-	"github.com/jacobsa/fuse"
 	"log"
 	"os"
 	"strings"
 	"syscall"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/jacobsa/fuse/fuseutil"
-	g "github.com/monder/goofys-docker/internal"
+	"github.com/jacobsa/fuse"
+
 	"path/filepath"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/docker/go-plugins-helpers/volume"
+	"github.com/jacobsa/fuse/fuseutil"
+	g "github.com/monder/goofys-docker/internal"
 )
 
 type s3Driver struct {
@@ -35,6 +37,7 @@ func newS3Driver(root string) s3Driver {
 }
 
 func (d s3Driver) Create(r volume.Request) volume.Response {
+	log.Printf("Creating volume %s\n", r.Name)
 	d.m.Lock()
 	defer d.m.Unlock()
 	d.volumes[r.Name] = r.Options
@@ -52,7 +55,7 @@ func (d s3Driver) Get(r volume.Request) volume.Response {
 			},
 		}
 	}
-	return volume.Response{}
+	return volume.Response{Err: fmt.Sprintf("Unable to find volume mounted on %s", d.mountpoint(r.Name))}
 }
 
 func (d s3Driver) List(r volume.Request) volume.Response {
@@ -71,6 +74,7 @@ func (d s3Driver) List(r volume.Request) volume.Response {
 }
 
 func (d s3Driver) Remove(r volume.Request) volume.Response {
+	log.Printf("Removing volume %s\n", r.Name)
 	d.m.Lock()
 	defer d.m.Unlock()
 	bucket := strings.SplitN(r.Name, "/", 2)[0]
@@ -161,21 +165,35 @@ func (d *s3Driver) mountpoint(name string) string {
 func (d *s3Driver) mountBucket(name string, volumeName string) error {
 
 	awsConfig := &aws.Config{
+		DisableSSL:       aws.Bool(false),
 		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String("eu-west-1"),
+		Region:           aws.String("us-east-1"),
 	}
 	goofysFlags := &g.FlagStorage{
 		StorageClass: "STANDARD",
 	}
 
+	bucket := name
+	if bkt, ok := d.volumes[volumeName]["bucket"]; ok {
+		bucket = bkt
+	}
+	if prefix, ok := d.volumes[volumeName]["prefix"]; ok {
+		bucket = bucket + ":" + prefix
+	}
 	if region, ok := d.volumes[volumeName]["region"]; ok {
 		awsConfig.Region = aws.String(region)
 	}
 	if storageClass, ok := d.volumes[volumeName]["storage-class"]; ok {
 		goofysFlags.StorageClass = storageClass
 	}
+	if debugS3, ok := d.volumes[volumeName]["debugs3"]; ok {
+		if s, err := strconv.ParseBool(debugS3); err == nil {
+			goofysFlags.DebugS3 = s
+		}
+	}
 
-	goofys := g.NewGoofys(name, awsConfig, goofysFlags)
+	log.Printf("Create Goofys for bucket %s\n", bucket)
+	goofys := g.NewGoofys(bucket, awsConfig, goofysFlags)
 	if goofys == nil {
 		err := fmt.Errorf("Goofys: initialization failed")
 		return err

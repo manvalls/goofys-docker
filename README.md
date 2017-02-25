@@ -5,7 +5,7 @@ goofys-docker is a docker [volume plugin] wrapper for S3
 
 ## Overview
 
-The inital idea behind mounting s3 buckets as docker volumes is to provide store for configs and secrets. The volume as per [goofys] does not have features like randow-write support, unix permissions, caching.
+The initial idea behind mounting s3 buckets as docker volumes is to provide store for configs and secrets. The volume as per [goofys] does not have features like random-write support, unix permissions, caching.
 
 ## Getting started
 
@@ -31,17 +31,37 @@ The socket `/run/docker/plugins/goofys.sock` will be created to interact with do
 
 ### Using with docker
 
-Create a new volume by issueing a docker volume command:
 ```
-docker volume create --name=test-docker-goofys --driver=goofys
+docker volume create --name=VOLUME_NAME --driver=goofys --opt OPTION
+```
+
+#### Options
+
+* `bucket` - Optional S3 bucket name. The default bucket is the volume name.
+* `prefix` - Optional S3 prefix path.
+* `region` - Optional AWS region (default is "us-east-1").
+* `debugs3` - Optional S3 debug logs (default is 0).
+
+Create a new volume by issuing a docker volume command:
+```
+docker volume create --name=test-docker-goofys --driver=goofys region=eu-west-1
 ```
 That will create a volume connected to `test-docker-goofys` bucket. The region of the bucket will be autodetected.
 
 Nothing is mounted yet.
 
-Launch the container with `test-docker-goofys` volume mounted in `/home` inside the container
+Launch the container with `test-docker-goofys` volume mounted in `/home` inside the container.
 ```
-docker run -v test-docker-goofys:/home:ro -it busybox sh
+docker run -it --rm -v test-docker-goofys:/home:ro -it busybox sh
+/ # cat /home/test
+test file content
+/ # ^D
+```
+
+Pass the bucket name as an option instead of the default volume name value:
+```
+docker volume create --name=vol1 --driver=goofys --opt bucket=test-docker-goofys --opt region=eu-west-1
+docker run -it --rm -v vol1:/home:ro -it busybox sh
 / # cat /home/test
 test file content
 / # ^D
@@ -49,8 +69,8 @@ test file content
 
 It is also possible to mount a subfolder:
 ```
-docker volume create --name=test-docker-goofys/folder --driver=goofys
-docker run docker run -v test-docker-goofys/folder:/home:ro -it busybox sh
+docker volume create --name=vol1 --driver=goofys --opt prefix=folder region=eu-west-1
+docker run -it --rm -v vol1:/home:ro -it busybox sh
 / # cat /home/test
 test file content from folder
 / # ^D
