@@ -14,10 +14,10 @@ import (
 
 	"path/filepath"
 
+	goofys "github.com/anrim/goofys-docker/internal"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/jacobsa/fuse/fuseutil"
-	g "github.com/monder/goofys-docker/internal"
 )
 
 type s3Driver struct {
@@ -93,7 +93,7 @@ func (d s3Driver) Path(r volume.Request) volume.Response {
 	}
 }
 
-func (d s3Driver) Mount(r volume.Request) volume.Response {
+func (d s3Driver) Mount(r volume.MountRequest) volume.Response {
 	d.m.Lock()
 	defer d.m.Unlock()
 
@@ -136,7 +136,7 @@ func (d s3Driver) Mount(r volume.Request) volume.Response {
 	return volume.Response{Mountpoint: d.mountpoint(r.Name)}
 }
 
-func (d s3Driver) Unmount(r volume.Request) volume.Response {
+func (d s3Driver) Unmount(r volume.UnmountRequest) volume.Response {
 	d.m.Lock()
 	defer d.m.Unlock()
 
@@ -169,7 +169,7 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 		S3ForcePathStyle: aws.Bool(true),
 		Region:           aws.String("us-east-1"),
 	}
-	goofysFlags := &g.FlagStorage{
+	goofysFlags := &goofys.FlagStorage{
 		StorageClass: "STANDARD",
 	}
 
@@ -193,12 +193,12 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 	}
 
 	log.Printf("Create Goofys for bucket %s\n", bucket)
-	goofys := g.NewGoofys(bucket, awsConfig, goofysFlags)
-	if goofys == nil {
+	g := goofys.NewGoofys(bucket, awsConfig, goofysFlags)
+	if g == nil {
 		err := fmt.Errorf("Goofys: initialization failed")
 		return err
 	}
-	server := fuseutil.NewFileSystemServer(goofys)
+	server := fuseutil.NewFileSystemServer(g)
 
 	mountCfg := &fuse.MountConfig{
 		FSName:                  name,
@@ -213,4 +213,11 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 	}
 
 	return nil
+}
+
+func (d s3Driver) Capabilities(r volume.Request) volume.Response {
+	log.Printf("Capabilities %+v\n", r)
+	return volume.Response{
+		Capabilities: volume.Capability{Scope: "local"},
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"syscall"
 
 	"github.com/docker/go-plugins-helpers/volume"
 	_ "golang.org/x/net/context"
@@ -25,5 +26,5 @@ func main() {
 	h := volume.NewHandler(d)
 
 	fmt.Printf("Listening on %s\n", socketAddress)
-	fmt.Println(h.ServeUnix("wheel", socketAddress))
+	fmt.Println(h.ServeUnix(socketAddress, syscall.Getgid()))
 }
