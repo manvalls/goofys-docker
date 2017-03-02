@@ -1,2 +1,2 @@
 #!/bin/sh
-docker run --rm -v "$PWD":/go/src/github.com/monder/goofys-docker -w /go/src/github.com/monder/goofys-docker -it -e GO15VENDOREXPERIMENT=1 golang:1.5 bash -c "go get github.com/Masterminds/glide && glide i && go build -a"
+docker run -it --rm -v "$PWD":/go/src/github.com/anrim/goofys-docker -w /go/src/github.com/anrim/goofys-docker -e GOOS=linux -e GOARCH=amd64 -e CGO_ENABLED=0 anrim/golang:1.8-alpine bash -c "go get github.com/Masterminds/glide && glide i && go build -a -v -installsuffix cgo"

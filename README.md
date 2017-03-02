@@ -15,7 +15,14 @@ The docker host should have [FUSE] support with `fusermount` cli utility in `$PA
 
 ### Building
 
-There are prebuilt binaries availble [here][download]. If you need to build it yourself there is a helper file `build.sh` that will run a container that builds the application using go 1.5. Version 1.5 is used to workaround https://github.com/docker/docker/issues/20865
+There are prebuilt binaries availble [here][download].
+
+If you need to build it yourself there is a helper file `build.sh` that will run a container that builds the application using go 1.8.
+
+Example. Build binary for Linux with static linking
+```
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -v -installsuffix cgo
+```
 
 ### Configuration
 
