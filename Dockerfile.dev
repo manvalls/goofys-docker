@@ -1,0 +1,17 @@
+FROM alpine:latest
+
+ENV GOPATH=/tmp/go
+COPY . $GOPATH/src/github.com/haibin-fx/goofys-docker
+WORKDIR $GOPATH/src/github.com/haibin-fx/goofys-docker
+
+RUN set -ex \
+    && apk add --no-cache --virtual=.build-deps musl-dev go git \
+    && go get github.com/aws/aws-sdk-go/aws \
+    && go get github.com/docker/go-plugins-helpers/volume \
+    && go get github.com/haibin-fx/goofys-docker \
+    && go get github.com/jacobsa/fuse \
+    && go get golang.org/x/net/context\
+    && go install --ldflags '-extldflags "-static"' \
+    && apk del .build-deps
+
+CMD ["$GOPATH/bin/goofys-docker"]

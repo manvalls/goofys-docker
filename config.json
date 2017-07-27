@@ -1,0 +1,67 @@
+{
+    "description": "Goofys plugin for Docker",
+    "documentation": "https://docs.docker.com/engine/extend/plugins/",
+    "entrypoint": [
+        "/usr/local/bin/goofys-docker"
+    ],
+    "env": [
+        {
+            "name": "DEBUG",
+            "settable": [
+                "value"
+            ],
+            "value": "0"
+        },
+        {
+            "name": "http_proxy",
+            "settable": [
+                "value"
+            ],
+            "value": "${http_proxy}"
+        },
+        {
+            "name": "https_proxy",
+            "settable": [
+                "value"
+            ],
+            "value": "${https_proxy}"
+        },
+        {
+            "name": "no_proxy",
+            "settable": [
+                "value"
+            ],
+            "value": "${no_proxy}"
+        }
+    ],
+    "interface": {
+        "socket": "goofys.sock",
+        "types": [
+            "docker.volumedriver/1.0"
+        ]
+    },
+    "linux": {
+        "capabilities": [
+            "CAP_SYS_ADMIN"
+        ],
+        "devices": [
+            {
+                "path": "/dev/fuse"
+            }
+        ]
+    },
+    "mounts": [
+        {
+            "destination": "/mnt/state",
+            "options": [
+                "rbind"
+            ],
+            "source": "/var/lib/docker/plugins/",
+            "type": "bind"
+        }
+    ],
+    "network": {
+        "type": "host"
+    },
+    "propagatedmount": "/mnt/volumes"
+}
