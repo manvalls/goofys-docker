@@ -217,15 +217,14 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 			goofysFlags.DebugS3 = s
 		}
 	}
-
 	if dirmode, ok := d.volumes[volumeName]["dir-mode"]; ok {
 		if i, err := strconv.ParseUint(dirmode,0,32); err == nil {
-			goofysFlags.DirMode = int32(i)
+			goofysFlags.DirMode = os.FileMode(i)
 		}
 	}
 	if filemode, ok := d.volumes[volumeName]["file-mode"]; ok {
 		if i, err := strconv.ParseUint(filemode,0,32); err == nil {
-			goofysFlags.FileMode = int32(i)
+			goofysFlags.FileMode = os.FileMode(i)
 		}
 	}
 	if uid, ok := d.volumes[volumeName]["uid"]; ok {
