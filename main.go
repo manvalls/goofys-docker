@@ -237,6 +237,7 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 			goofysFlags.Gid = uint32(i)
 		}
 	}
+	goofysFlags.MountOptions["allow_other"] = ""
 	log.Printf("Create Goofys for bucket %s\n", bucket)
 	g := goofys.NewGoofys(bucket, awsConfig, goofysFlags)
 	if g == nil {
@@ -247,7 +248,7 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 
 	mountCfg := &fuse.MountConfig{
 		FSName:                  name,
-		Options:                 map[string]string{"allow_other": "1"},
+		Options:                 goofysFlags.MountOptions,
 		DisableWritebackCaching: true,
 	}
 
