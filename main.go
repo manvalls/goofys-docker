@@ -217,24 +217,25 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 			goofysFlags.DebugS3 = s
 		}
 	}
+
 	if dirmode, ok := d.volumes[volumeName]["dir-mode"]; ok {
-		if i, err := strconv.ParseUint(dirmode,10,16); err == nil {
-			goofysFlags.DirMode = i
+		if i, err := strconv.ParseUint(dirmode,0,32); err == nil {
+			goofysFlags.DirMode = uint32(i)
 		}
 	}
 	if filemode, ok := d.volumes[volumeName]["file-mode"]; ok {
-		if i, err := strconv.ParseUint(filemode,10,16); err == nil {
-			goofysFlags.FileMode = i
+		if i, err := strconv.ParseUint(filemode,0,32); err == nil {
+			goofysFlags.FileMode = uint32(i)
 		}
 	}
 	if uid, ok := d.volumes[volumeName]["uid"]; ok {
-		if i, err := strconv.ParseUint(uid,10,16); err == nil {
-			goofysFlags.Uid = i
+		if i, err := strconv.ParseUint(uid,0,32); err == nil {
+			goofysFlags.Uid = uint32(i)
 		}
 	}
 	if gid, ok := d.volumes[volumeName]["gid"]; ok {
-		if i, err := strconv.ParseUint(gid,10,16); err == nil {
-			goofysFlags.Gid = i
+		if i, err := strconv.ParseUint(gid,0,32); err == nil {
+			goofysFlags.Gid = uint32(i)
 		}
 	}
 	log.Printf("Create Goofys for bucket %s\n", bucket)
