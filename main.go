@@ -247,7 +247,7 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 
 	mountCfg := &fuse.MountConfig{
 		FSName:                  name,
-		Options:                 map[string]string{"allow_other": ""},
+		Options:                 map[string]string{"allow_other": true},
 		DisableWritebackCaching: true,
 	}
 
