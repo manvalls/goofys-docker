@@ -220,12 +220,12 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 
 	if dirmode, ok := d.volumes[volumeName]["dir-mode"]; ok {
 		if i, err := strconv.ParseUint(dirmode,0,32); err == nil {
-			goofysFlags.DirMode = uint32(i)
+			goofysFlags.DirMode = int32(i)
 		}
 	}
 	if filemode, ok := d.volumes[volumeName]["file-mode"]; ok {
 		if i, err := strconv.ParseUint(filemode,0,32); err == nil {
-			goofysFlags.FileMode = uint32(i)
+			goofysFlags.FileMode = int32(i)
 		}
 	}
 	if uid, ok := d.volumes[volumeName]["uid"]; ok {
