@@ -17,6 +17,7 @@ import (
 
 	goofys "github.com/haibin-fx/goofys-docker/internal"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/docker/go-plugins-helpers/volume"
 	_ "golang.org/x/net/context"
 	"github.com/jacobsa/fuse/fuseutil"
@@ -33,7 +34,7 @@ const (
 )
 
 var (
-	defaultPath = filepath.Join(volume.DefaultDockerRootDirectory, "goofys")
+	defaultPath = filepath.Join("/mnt/", "volumes")
 	root        = flag.String("root", defaultPath, "Docker volumes root directory")
 )
 
@@ -202,6 +203,12 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 	if region, ok := d.volumes[volumeName]["region"]; ok {
 		awsConfig.Region = aws.String(region)
 	}
+	if profile, ok := d.volumes[volumeName]["profile"]; ok {
+		awsConfig.Credentials = credentials.NewSharedCredentials("", profile)
+	}
+	if endpoint, ok := d.volumes[volumeName]["endpoint"]; ok {
+		awsConfig.Endpoint = aws.String(endpoint)
+	}
 	if storageClass, ok := d.volumes[volumeName]["storage-class"]; ok {
 		goofysFlags.StorageClass = storageClass
 	}
@@ -210,7 +217,26 @@ func (d *s3Driver) mountBucket(name string, volumeName string) error {
 			goofysFlags.DebugS3 = s
 		}
 	}
-
+	if dirmode, ok := d.volumes[volumeName]["dir-mode"]; ok {
+		if i, err := strconv.ParseUint(dirmode,10,16); err == nil {
+			goofysFlags.DirMode = i
+		}
+	}
+	if filemode, ok := d.volumes[volumeName]["file-mode"]; ok {
+		if i, err := strconv.ParseUint(filemode,10,16); err == nil {
+			goofysFlags.FileMode = i
+		}
+	}
+	if uid, ok := d.volumes[volumeName]["uid"]; ok {
+		if i, err := strconv.ParseUint(uid,10,16); err == nil {
+			goofysFlags.Uid = i
+		}
+	}
+	if gid, ok := d.volumes[volumeName]["gid"]; ok {
+		if i, err := strconv.ParseUint(gid,10,16); err == nil {
+			goofysFlags.Gid = i
+		}
+	}
 	log.Printf("Create Goofys for bucket %s\n", bucket)
 	g := goofys.NewGoofys(bucket, awsConfig, goofysFlags)
 	if g == nil {

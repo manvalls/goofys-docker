@@ -6,13 +6,6 @@
     ],
     "env": [
         {
-            "name": "DEBUG",
-            "settable": [
-                "value"
-            ],
-            "value": "0"
-        },
-        {
             "name": "http_proxy",
             "settable": [
                 "value"
@@ -32,6 +25,20 @@
                 "value"
             ],
             "value": "${no_proxy}"
+        },
+        {
+            "name": "AWS_ACCESS_KEY_ID",
+            "settable": [
+                "value"
+            ],
+            "value": "${AWS_ACCESS_KEY_ID}"
+        },
+        {
+            "name": "AWS_SECRET_ACCESS_KEY",
+            "settable": [
+                "value"
+            ],
+            "value": "${AWS_SECRET_ACCESS_KEY}"
         }
     ],
     "interface": {
