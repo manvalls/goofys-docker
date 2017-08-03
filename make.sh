@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-PLUGIN_NAME=fx/goofys
+PLUGIN_NAME=haibinfx/goofys
 PLUGIN_TAG=latest
 
 all() {
