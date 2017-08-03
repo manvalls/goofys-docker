@@ -15,43 +15,40 @@ The docker host should have [FUSE] support with `fusermount` cli utility in `$PA
 
 ### Building
 
-There are prebuilt binaries availble [here][download].
+There are prebuilt plugin(s) availble from docker hub, just run docker plugin install haibinfx/goofys.
 
-If you need to build it yourself there is a helper file `build.sh` that will run a container that builds the application using go 1.8.
+If you need to build it yourself there is a build file `.\make.sh` that will build a plugin in your local machine.
 
-Example. Build binary for Linux with static linking
-```
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -v -installsuffix cgo
-```
+For Windows Systems that are not Unix-like systems, run `.\make_in.sh` first, then log into the docker machine to run `.\make.sh`.
 
 ### Configuration
 
-Currently there is no support for configuration options, but the defaults are reasonable for most of the cases.
+docker plugin set haibinfx/goofys http_proxy=http://192.168.100.1:3128 https_proxy=http://192.168.100.1:3128 \
+    no_proxy=localhost,127.0.0.1,192.168.99.100,192.168.99.101,192.168.99.102 \
+    AWS_ACCESS_KEY_ID=[AABBAKIACDDXIH2C Your ID] AWS_SECRET_ACCESS_KEY=[KDabzNs68Tjasdfasf5as Your Key]
+docker plugin enable fx/goofys
+
 The most simple way to configure aws credentials is to use [IAM roles] to access the bucket for the machine, [aws configuration file][AWS auth] or [ENV variables][AWS auth]. The credentials will be used for all buckets mounted by `goofys-docker`.
 
 ### Running
 
 ```
-./goofys-docker
-```
-The socket `/run/docker/plugins/goofys.sock` will be created to interact with docker. Ownership of the file is `root:wheel`
-
-### Using with docker
-
-```
-docker volume create --name=VOLUME_NAME --driver=goofys --opt OPTION
-```
+docker volume create --name=test-plugin --driver=haibinfx/goofys --opt bucket=my-backup-name --opt prefix=path_under_bucket \
+--opt debugs3=1 --opt gid=50 --opt uid=1000 --opt dir_mode=0666 --opt file_mode=0666
+docker run -it --rm -v test-plugin:/mnt/test:ro busybox sh
 
 #### Options
 
 * `bucket` - Optional S3 bucket name. The default bucket is the volume name.
 * `prefix` - Optional S3 prefix path.
-* `region` - Optional AWS region (default is "us-east-1").
+* `region` - Optional AWS region (default is "us-east-1" and will be auto detected).
 * `debugs3` - Optional S3 debug logs (default is 0).
+* `endpoint` - Optional S3 Service endpoint (default is auto detected).
+* `profile` - Optional AWS profile.
 
 Create a new volume by issuing a docker volume command:
 ```
-docker volume create --name=test-docker-goofys --driver=goofys region=eu-west-1
+docker volume create --name=test-docker-goofys --driver=haibinfx/goofys region=eu-west-1
 ```
 That will create a volume connected to `test-docker-goofys` bucket. The region of the bucket will be autodetected.
 
@@ -67,7 +64,7 @@ test file content
 
 Pass the bucket name as an option instead of the default volume name value:
 ```
-docker volume create --name=vol1 --driver=goofys --opt bucket=test-docker-goofys --opt region=eu-west-1
+docker volume create --name=vol1 --driver=haibinfx/goofys --opt bucket=test-docker-goofys --opt region=eu-west-1
 docker run -it --rm -v vol1:/home:ro -it busybox sh
 / # cat /home/test
 test file content
@@ -76,7 +73,7 @@ test file content
 
 It is also possible to mount a subfolder:
 ```
-docker volume create --name=vol1 --driver=goofys --opt prefix=folder region=eu-west-1
+docker volume create --name=vol1 --driver=haibinfx/goofys --opt prefix=folder region=eu-west-1
 docker run -it --rm -v vol1:/home:ro -it busybox sh
 / # cat /home/test
 test file content from folder
