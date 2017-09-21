@@ -1,7 +1,7 @@
 [![license](https://img.shields.io/github/license/monder/goofys-docker.svg?maxAge=2592000&style=flat-square)]()
 [![GitHub tag](https://img.shields.io/github/tag/monder/goofys-docker.svg?style=flat-square)]()
 
-goofys-docker is a docker [volume plugin] wrapper for S3
+goofys-docker is a docker [volume plugin] wrapper for S3. The code is based on [goofys-docker].
 
 ## Overview
 
@@ -23,10 +23,12 @@ For Windows Systems that are not Unix-like systems, run `.\make_in.sh` first, th
 
 ### Configuration
 
+```
 docker plugin set haibinfx/goofys http_proxy=http://192.168.100.1:3128 https_proxy=http://192.168.100.1:3128 \
     no_proxy=localhost,127.0.0.1,192.168.99.100,192.168.99.101,192.168.99.102 \
     AWS_ACCESS_KEY_ID=[AABBAKIACDDXIH2C Your ID] AWS_SECRET_ACCESS_KEY=[KDabzNs68Tjasdfasf5as Your Key]
-docker plugin enable fx/goofys
+docker plugin enable haibinfx/goofys
+```
 
 The most simple way to configure aws credentials is to use [IAM roles] to access the bucket for the machine, [aws configuration file][AWS auth] or [ENV variables][AWS auth]. The credentials will be used for all buckets mounted by `goofys-docker`.
 
@@ -36,6 +38,7 @@ The most simple way to configure aws credentials is to use [IAM roles] to access
 docker volume create --name=test-plugin --driver=haibinfx/goofys --opt bucket=my-backup-name --opt prefix=path_under_bucket \
 --opt debugs3=1 --opt gid=50 --opt uid=1000 --opt dir_mode=0666 --opt file_mode=0666
 docker run -it --rm -v test-plugin:/mnt/test:ro busybox sh
+```
 
 #### Options
 
@@ -54,10 +57,10 @@ That will create a volume connected to `test-docker-goofys` bucket. The region o
 
 Nothing is mounted yet.
 
-Launch the container with `test-docker-goofys` volume mounted in `/home` inside the container.
+Launch the container with `test-docker-goofys` volume mounted in `/mnt` inside the container.
 ```
-docker run -it --rm -v test-docker-goofys:/home:ro -it busybox sh
-/ # cat /home/test
+docker run -it --rm -v test-docker-goofys:/mnt:ro -it busybox sh
+/ # cat /mnt/test
 test file content
 / # ^D
 ```
@@ -65,8 +68,8 @@ test file content
 Pass the bucket name as an option instead of the default volume name value:
 ```
 docker volume create --name=vol1 --driver=haibinfx/goofys --opt bucket=test-docker-goofys --opt region=eu-west-1
-docker run -it --rm -v vol1:/home:ro -it busybox sh
-/ # cat /home/test
+docker run -it --rm -v vol1:/mnt/test:ro -it busybox sh
+/ # cat /mnt/test
 test file content
 / # ^D
 ```
@@ -74,8 +77,8 @@ test file content
 It is also possible to mount a subfolder:
 ```
 docker volume create --name=vol1 --driver=haibinfx/goofys --opt prefix=folder region=eu-west-1
-docker run -it --rm -v vol1:/home:ro -it busybox sh
-/ # cat /home/test
+docker run -it --rm -v vol1:/mnt/test:ro -it busybox sh
+/ # cat /mnt/test
 test file content from folder
 / # ^D
 ```
@@ -86,6 +89,7 @@ If multiple folders are mounted for the single bucket on the same machine, only 
 MIT
 
 [goofys]: https://github.com/kahing/goofys
+[goofys-docker]: https://github.com/anrim/goofys-docker
 [volume plugin]: https://docs.docker.com/engine/extend/plugins_volume/
 [FUSE]: https://github.com/libfuse/libfuse
 [download]: https://github.com/monder/goofys-docker/releases

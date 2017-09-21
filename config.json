@@ -1,44 +1,46 @@
 {
     "description": "Goofys plugin for Docker",
-    "documentation": "https://docs.docker.com/engine/extend/plugins/",
+    "documentation": "https://github.com/haibin-fx/goofys-docker",
     "entrypoint": [
         "/usr/local/bin/goofys-docker"
     ],
     "env": [
         {
-            "name": "http_proxy",
+            "name": "DEBUG",
             "settable": [
                 "value"
             ],
-            "value": "${http_proxy}"
+            "value": "0"
+        },
+        {
+            "name": "http_proxy",
+            "settable": [
+                "value"
+            ]
         },
         {
             "name": "https_proxy",
             "settable": [
                 "value"
-            ],
-            "value": "${https_proxy}"
+            ]
         },
         {
             "name": "no_proxy",
             "settable": [
                 "value"
-            ],
-            "value": "${no_proxy}"
+            ]
         },
         {
             "name": "AWS_ACCESS_KEY_ID",
             "settable": [
                 "value"
-            ],
-            "value": "${AWS_ACCESS_KEY_ID}"
+            ]
         },
         {
             "name": "AWS_SECRET_ACCESS_KEY",
             "settable": [
                 "value"
-            ],
-            "value": "${AWS_SECRET_ACCESS_KEY}"
+            ]
         }
     ],
     "interface": {
@@ -63,7 +65,23 @@
             "options": [
                 "rbind"
             ],
+            "name": "state",
             "source": "/var/lib/docker/plugins/",
+            "settable": [
+                "source"
+            ],
+            "type": "bind"
+        },
+        {
+            "destination": "/root/.aws",
+            "options": [
+                "rbind"
+            ],
+            "name": "aws_credential",
+            "source": "",
+            "settable": [
+                "source"
+            ],
             "type": "bind"
         }
     ],
