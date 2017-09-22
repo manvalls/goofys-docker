@@ -101,8 +101,11 @@ case "$1" in
       . ./.env
       set +a
 
-      docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env} ||:
-      docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG} ||:
+      enabled=$(docker plugin inspect  -f "{{.Enabled}}" ${PLUGIN_NAME}:${PLUGIN_TAG} ||echo "")
+      if [ "$enabled" != "true" ]; then
+        docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env} ||:
+        docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG} ||:
+      fi
       docker-compose -f test.yml up
       ;;
 	*)
