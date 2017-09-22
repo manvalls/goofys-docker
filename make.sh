@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 PLUGIN_NAME=haibinfx/goofys
-PLUGIN_TAG=latest
+PLUGIN_TAG=2.0
 
 MSYS_NO_PATHCONV=1
 
@@ -10,33 +10,18 @@ DOCKERMACHINE=$(which docker-machine)||echo ""
 if [ -n "$DOCKERMACHINE" ]; then
    MACHINE=$(docker-machine ls --filter state=running --format "{{.Name}}")||echo ""
    eval $(docker-machine env --shell=bash --no-proxy $MACHINE)
-
-   dockerimg
-
-   echo "copy files to docker-machine to build the plugin ..."
-   docker-machine ssh $MACHINE rm -rf *
-   docker-machine scp Dockerfile $MACHINE:~
-   docker-machine scp config.json $MACHINE:~
-   docker-machine scp make.sh $MACHINE:~
-   docker-machine ssh $MACHINE chmod 700 ./make.sh
-   echo "use: docker-machine ssh ${MACHINE}"
-   echo "use: ./make.sh all_vm"
-   docker-machine ssh ${MACHINE} sh -C ".\/make.sh all_vm"
 fi
 }
 
 all() {
-clean; dockerimg; rootfs; create;
-}
-all_vm() {
-clean; rootfs; create;
+clean; rfsimg; rootfs; create;
 }
 
 clean() {
 	echo "### rm ./plugin"
 	rm -rf ./plugin
 }
-dockerimg() {
+rfsimg() {
 	echo "### docker build: rootfs image with goofys-docker"
 	docker build -t ${PLUGIN_NAME}:rootfs . \
 	    --build-arg https_proxy=$HTTP_PROXY --build-arg http_proxy=$HTTP_PROXY \
@@ -65,18 +50,55 @@ create() {
 	echo "### create new plugin ${PLUGIN_NAME}:${PLUGIN_TAG} from ./plugin"
 	docker plugin create ${PLUGIN_NAME}:${PLUGIN_TAG} ./plugin
 }
-enable() {
-	echo "### enable plugin ${PLUGIN_NAME}:${PLUGIN_TAG}"
-	docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG}
-}
+
 push() {  clean docker rootfs create enable
 	echo "### push plugin ${PLUGIN_NAME}:${PLUGIN_TAG}"
 	docker plugin push ${PLUGIN_NAME}:${PLUGIN_TAG}
 }
 
-if [ -z "$1" ]; then
-  set "all"
-fi
-
 machine
-$1
+case "$1" in
+    "")
+	  all
+	  ;;
+
+    noimg)
+      docker container rm goofysdocker_test_1||:
+      docker volume rm goofysdocker_test||:
+      clean; rootfs; create;
+      ;;
+    cp2m)
+      if [ -n "$MACHINE" ]; then
+        echo "copy files to docker-machine to build the plugin ..."
+        docker-machine ssh $MACHINE rm -rf *
+        docker-machine scp Dockerfile $MACHINE:~
+        docker-machine scp config.json $MACHINE:~
+        docker-machine scp make.sh $MACHINE:~
+        docker-machine ssh $MACHINE chmod 700 ./make.sh
+        echo "use: docker-machine ssh ${MACHINE}"
+        echo "use: ./make.sh all_vm"
+        # doesn't work.  docker-machine ssh ${MACHINE} sh -C ".\/make.sh all_vm"
+        docker-machine ssh ${MACHINE}
+      fi
+      ;;
+	log)
+      docker-machine ssh ${MACHINE} sudo cat "\/var/log/docker.log" |grep plugin
+      ;;
+    state)
+      docker-machine ssh ${MACHINE} sudo cat "\/var/lib/docker/plugins/goofys-state.json"
+      ;;
+	test)
+      echo "### enable plugin ${PLUGIN_NAME}:${PLUGIN_TAG}"
+      set -a
+      . ./.env
+      set +a
+      echo "docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG}"
+      docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env} ||:
+      docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG} ||:
+      docker-compose -f test.yml up
+      ;;
+	*)
+    $1
+	;;
+esac
+

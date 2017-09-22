@@ -1,0 +1,23 @@
+version: '3.3'
+volumes:
+  test:
+    driver: haibinfx/goofys:2.0
+    driver_opts:
+      bucket: "fx-backup-media:gorman"
+      endpoint: "https://s3-ap-southeast-2.amazonaws.com"
+      region: "ap-southeast-2"
+      region-set: 1
+      gid: 50
+      uid: 1000
+      file-mode: 0666
+      dir-mode: 0777
+      debug-fuse:  1
+      debug-s3:    1
+services:
+  test:
+    image: alpine
+    volumes:
+      - test:/mnt/s3
+    command: "tail -f /dev/null"
+
+
