@@ -92,7 +92,7 @@ func (d *s3Driver) Create(r *volume.CreateRequest) error {
 	var cacheArgs []string
 
 	goofysConfig := &goofys.Config{
-		MountOptions: map[string]string{"_netdev": "","allow_other":""},
+		MountOptions: map[string]string{"allow_other":""},
 
 		DirMode: os.FileMode(0755),
 		FileMode: os.FileMode(0644),

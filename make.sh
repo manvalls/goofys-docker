@@ -63,6 +63,9 @@ case "$1" in
 	  ;;
 
     noimg)
+      yes|docker container prune
+      yes|docker volume prune
+
       docker container rm goofysdocker_test_1||:
       docker volume rm goofysdocker_test||:
       clean; rootfs; create;
@@ -82,17 +85,22 @@ case "$1" in
       fi
       ;;
 	log)
-      docker-machine ssh ${MACHINE} sudo cat "\/var/log/docker.log" |grep plugin
+      docker-machine ssh ${MACHINE} sudo cat "\/var/log/docker.log"
       ;;
     state)
       docker-machine ssh ${MACHINE} sudo cat "\/var/lib/docker/plugins/goofys-state.json"
       ;;
 	test)
       echo "### enable plugin ${PLUGIN_NAME}:${PLUGIN_TAG}"
+      yes|docker container prune
+      yes|docker volume prune
+
+      docker container rm goofysdocker_test_1||:
+      docker volume rm goofysdocker_test||:
       set -a
       . ./.env
       set +a
-      echo "docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG}"
+
       docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env} ||:
       docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG} ||:
       docker-compose -f test.yml up
