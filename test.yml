@@ -18,6 +18,6 @@ services:
     image: alpine
     volumes:
       - test:/mnt/s3
-    command: "tail -f /dev/null"
+
 
 

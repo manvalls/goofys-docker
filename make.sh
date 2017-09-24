@@ -79,8 +79,8 @@ case "$1" in
         docker-machine scp make.sh $MACHINE:~
         docker-machine ssh $MACHINE chmod 700 ./make.sh
         echo "use: docker-machine ssh ${MACHINE}"
-        echo "use: ./make.sh all_vm"
-        # doesn't work.  docker-machine ssh ${MACHINE} sh -C ".\/make.sh all_vm"
+        echo "use: ./make.sh noimg"
+        # doesn't work.  docker-machine ssh ${MACHINE} sh -C ".\/make.sh noimg"
         docker-machine ssh ${MACHINE}
       fi
       ;;
@@ -97,12 +97,12 @@ case "$1" in
 
       docker container rm goofysdocker_test_1||:
       docker volume rm goofysdocker_test||:
-      set -a
-      . ./.env
-      set +a
 
       enabled=$(docker plugin inspect  -f "{{.Enabled}}" ${PLUGIN_NAME}:${PLUGIN_TAG} ||echo "")
       if [ "$enabled" != "true" ]; then
+        set -a
+          . ./.env
+        set +a
         docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env} ||:
         docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG} ||:
       fi
