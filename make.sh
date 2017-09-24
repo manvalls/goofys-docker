@@ -14,14 +14,14 @@ fi
 }
 
 all() {
-clean; rfsimg; rootfs; create;
+clean; img; rootfs; create;
 }
 
 clean() {
 	echo "### rm ./plugin"
 	rm -rf ./plugin
 }
-rfsimg() {
+img() {
 	echo "### docker build: rootfs image with goofys-docker"
 	docker build -t ${PLUGIN_NAME}:rootfs . \
 	    --build-arg https_proxy=$HTTP_PROXY --build-arg http_proxy=$HTTP_PROXY \
