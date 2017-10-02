@@ -103,6 +103,7 @@ case "$1" in
         set -a
           . ./.env
         set +a
+        echo "docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env}"
         docker plugin set ${PLUGIN_NAME}:${PLUGIN_TAG} ${plugin_env} ||:
         docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG} ||:
       fi
