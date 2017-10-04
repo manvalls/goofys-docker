@@ -1,13 +1,16 @@
 version: '3.3'
 volumes:
   test:
-    driver: haibinfx/goofys:2.0
+    driver: ${PLUGIN_NAME}:${PLUGIN_TAG}
     driver_opts:
-      bucket: "fx-backup-media:gorman"
+      bucket: "fx-backup-media:/gorman"
       gid: 50
       uid: 1000
       debug-fuse:  1
       debug-s3:    1
+      state-cache-ttl: 1s
+      type-cache-ttl: 1s
+      profile: "default"
 services:
   test:
     image: alpine

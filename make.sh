@@ -1,7 +1,8 @@
 #!/bin/sh
-set -e
+set -e -a
 PLUGIN_NAME=haibinfx/goofys
 PLUGIN_TAG=2.0
+set +a
 
 MSYS_NO_PATHCONV=1
 
