@@ -362,8 +362,9 @@ func (d *s3Driver) Capabilities() *volume.CapabilitiesResponse {
 func (d *s3Driver) mountVolume(v *s3Volume) error {
 	// Mount the file system.
 	var mfs *fuse.MountedFileSystem
+	var fs *Goofys
 
-	mfs, err := goofys.Mount(
+	fs, mfs, err := goofys.Mount(
 		context.Background(),
 		v.Bucket,
 		v.Config)
