@@ -7,19 +7,18 @@ RUN apk --update add ca-certificates fuse syslog-ng \
     && set -ex \
     && go get $Goofys_docker
 
-#    $$ go get $Goofys_docker
+WORKDIR /
+RUN apk add ca-certificates
+RUN update-ca-certificates
+RUN apk add wget
+RUN wget http://github.com/kahing/catfs/releases/download/v0.6.0/catfs
+RUN chmod a+rwx catfs
 
-RUN apk --update add cargo make fuse-dev
-RUN cd $HOME \
-    && git clone https://github.com/kahing/catfs.git
-RUN cd $HOME/catfs \
-    && cargo install catfs
-
-
-FROM alpine:latest
-RUN apk add --update ca-certificates fuse syslog-ng llvm-libunwind
+FROM debian
+RUN apt-get update
+RUN apt-get install fuse musl ca-certificates -y
 COPY --from=goofys /tmp/go/bin/goofys-docker /usr/local/bin
-COPY --from=goofys root/.cargo/bin/catfs /usr/local/bin
+COPY --from=goofys /catfs /usr/local/bin
 
 RUN mkdir -p /run/docker/plugins /mnt/volumes
 CMD ["/usr/local/bin/goofys-docker"]

@@ -362,10 +362,7 @@ func (d *s3Driver) Capabilities() *volume.CapabilitiesResponse {
 }
 
 func (d *s3Driver) mountVolume(v *s3Volume) error {
-	// Mount the file system.
-	var mfs *fuse.MountedFileSystem
-
-	_, mfs, err := goofys.Mount(
+	_, _, err := goofys.Mount(
 		context.Background(),
 		v.Bucket,
 		v.Config)
@@ -377,17 +374,6 @@ func (d *s3Driver) mountVolume(v *s3Volume) error {
 	} else {
 		//kill(os.Getppid(), syscall.SIGUSR1)
 		log.Println("File system has been successfully mounted.")
-		// Let the user unmount with Ctrl-C
-		// (SIGINT). But if cache is on, catfs will
-		// receive the signal and we would detect that exiting
-
-		// Wait for the file system to be unmounted.
-		err = mfs.Join(context.Background())
-		if err != nil {
-			err = fmt.Errorf("MountedFileSystem.Join: %v", err)
-			return err
-		}
-
 		log.Println("Goofys mountVolume Successfully exited.")
 	}
 	return nil
