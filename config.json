@@ -83,6 +83,18 @@
                 "source"
             ],
             "type": "bind"
+        },
+        {
+            "destination": "/mnt/cache",
+            "options": [
+                "rbind"
+            ],
+            "name": "cache",
+            "source": "",
+            "settable": [
+                "source"
+            ],
+            "type": "bind"
         }
     ],
     "network": {

@@ -4,12 +4,12 @@ import (
 	"strconv"
 	"sync"
 
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-    "os/user"
-	"io/ioutil"
-	"encoding/json"
+	"os/user"
 	"strings"
 
 	"syscall"
@@ -17,18 +17,18 @@ import (
 
 	"path/filepath"
 
-	"github.com/sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
+	"github.com/sirupsen/logrus"
 
 	goofys "github.com/kahing/goofys/api"
 
-	"golang.org/x/net/context"
 	"github.com/jacobsa/fuse"
+	"golang.org/x/net/context"
 )
 
 type s3Volume struct {
-	Bucket string
-	Prefix string
+	Bucket     string
+	Prefix     string
 	BucketName string
 
 	connections int
@@ -39,19 +39,20 @@ type s3Volume struct {
 type s3Driver struct {
 	sync.Mutex
 
-	root        string
-	statePath   string
-	volumes     map[string]*s3Volume
+	root      string
+	statePath string
+	volumes   map[string]*s3Volume
 }
+
 const (
 	socketAddress = "/run/docker/plugins/goofys.sock"
 )
 
 func newS3Driver(root string) (*s3Driver, error) {
 	d := &s3Driver{
-		root:        filepath.Join(root, "volumes"),
-		statePath:   filepath.Join(root, "state", "goofys-state.json"),
-		volumes:     map[string]*s3Volume{},
+		root:      filepath.Join(root, "volumes"),
+		statePath: filepath.Join(root, "state", "goofys-state.json"),
+		volumes:   map[string]*s3Volume{},
 	}
 
 	data, err := ioutil.ReadFile(d.statePath)
@@ -92,25 +93,25 @@ func (d *s3Driver) Create(r *volume.CreateRequest) error {
 	var cacheArgs []string
 
 	goofysConfig := &goofys.Config{
-		MountOptions: map[string]string{"allow_other":""},
+		MountOptions: map[string]string{"allow_other": ""},
 
-		DirMode: os.FileMode(0755),
-		FileMode: os.FileMode(0644),
-		Gid: uint32(50),
-		Uid: uint32(1000),
+		DirMode:      os.FileMode(0755),
+		FileMode:     os.FileMode(0644),
+		Gid:          uint32(50),
+		Uid:          uint32(1000),
 		StatCacheTTL: 1 * time.Minute,
 		TypeCacheTTL: 1 * time.Minute,
 
 		StorageClass: "STANDARD",
-		Region: "us-east-1",
-		Foreground: true,
+		Region:       "us-east-1",
+		Foreground:   true,
 	}
 
 	for key, val := range r.Options {
 		switch key {
 		case "bucket":
 			v.Bucket = val
-			bkt := strings.Split(val,":")
+			bkt := strings.Split(val, ":")
 			v.BucketName = bkt[0]
 			if len(bkt) > 1 {
 				v.Prefix = bkt[1]
@@ -121,19 +122,19 @@ func (d *s3Driver) Create(r *volume.CreateRequest) error {
 			v.Prefix = val
 
 		case "dir-mode":
-			if i, err := strconv.ParseUint(val,0,32); err == nil {
+			if i, err := strconv.ParseUint(val, 0, 32); err == nil {
 				goofysConfig.DirMode = os.FileMode(i)
 			}
 		case "file-mode":
-			if i, err := strconv.ParseUint(val,0,32); err == nil {
+			if i, err := strconv.ParseUint(val, 0, 32); err == nil {
 				goofysConfig.FileMode = os.FileMode(i)
 			}
 		case "gid":
-			if i, err := strconv.ParseUint(val,0,32); err == nil {
+			if i, err := strconv.ParseUint(val, 0, 32); err == nil {
 				goofysConfig.Gid = uint32(i)
 			}
 		case "uid":
-			if i, err := strconv.ParseUint(val,0,32); err == nil {
+			if i, err := strconv.ParseUint(val, 0, 32); err == nil {
 				goofysConfig.Uid = uint32(i)
 			}
 		case "endpoint":
@@ -197,21 +198,23 @@ func (d *s3Driver) Create(r *volume.CreateRequest) error {
 		return logError("BucketName was not found, bucket: %s, prefix: %s", v.Bucket, v.Prefix)
 	}
 
-	if strings.IndexByte(v.Bucket,':') == -1 && v.Prefix != "" {
+	if strings.IndexByte(v.Bucket, ':') == -1 && v.Prefix != "" {
 		v.Bucket = v.BucketName + ":" + v.Prefix
 	}
 
 	goofysConfig.MountPoint = filepath.Join(d.root, r.Name)
 
-	cacheDir :=filepath.Join("mnt", "cache", v.BucketName, v.Prefix)
+	cacheDir := filepath.Join("mnt", "cache", v.BucketName, v.Prefix)
 	err := os.MkdirAll(cacheDir, 0700)
-	if err !=nil {
+	if err != nil {
 		logrus.WithField("create", cacheDir).Error(err)
 		return err
 	}
 
 	// cacheArgs = append([]string{"--test"}, cacheArgs...)
 	cacheArgs = append(cacheArgs, "-ononempty")
+	cacheArgs = append(cacheArgs, "--free")
+	cacheArgs = append(cacheArgs, "10G")
 
 	cacheArgs = append(cacheArgs, "--")
 	cacheArgs = append(cacheArgs, goofysConfig.MountPoint)
@@ -249,12 +252,11 @@ func (d *s3Driver) Remove(r *volume.RemoveRequest) error {
 	return nil
 }
 
-func (d *s3Driver) Path(r *volume.PathRequest) (*volume.PathResponse, error)  {
+func (d *s3Driver) Path(r *volume.PathRequest) (*volume.PathResponse, error) {
 	logrus.WithField("method", "path").Debugf("%#v", r)
 
 	d.Lock()
 	defer d.Unlock()
-
 
 	v, ok := d.volumes[r.Name]
 	if !ok {
@@ -408,7 +410,7 @@ func main() {
 	}
 
 	d, err := newS3Driver("/mnt")
-	if err !=nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 	h := volume.NewHandler(d)

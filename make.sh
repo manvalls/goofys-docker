@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e -a
-PLUGIN_NAME=haibinfx/goofys
+PLUGIN_NAME=manvalls/goofys
 PLUGIN_TAG=2.0
 set +a
 
@@ -114,4 +114,3 @@ case "$1" in
     $1
 	;;
 esac
-

@@ -1,6 +1,6 @@
 FROM alpine:latest as goofys
 
-ENV GOPATH=/tmp/go Goofys_docker="github.com/haibin-fx/goofys-docker"
+ENV GOPATH=/tmp/go Goofys_docker="github.com/manvalls/goofys-docker"
 
 RUN apk --update add ca-certificates fuse syslog-ng \
     && apk --update add musl-dev go git \
@@ -23,4 +23,3 @@ COPY --from=goofys root/.cargo/bin/catfs /usr/local/bin
 
 RUN mkdir -p /run/docker/plugins /mnt/volumes
 CMD ["/usr/local/bin/goofys-docker"]
-
