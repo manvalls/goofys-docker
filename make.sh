@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e -a
 PLUGIN_NAME=manvalls/goofys
-PLUGIN_TAG=2.0
+PLUGIN_TAG=latest
 set +a
 
 MSYS_NO_PATHCONV=1
