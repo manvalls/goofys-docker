@@ -19,11 +19,12 @@ RUN chmod a+rwx goofys
 FROM golang:1.9-alpine AS driver
 RUN apk update
 RUN set -ex
-RUN apk add --no-cache --virtual .build-deps gcc libc-dev
+RUN apk add --no-cache --virtual .build-deps gcc libc-dev git
 
+RUN go get github.com/aws/aws-sdk-go
+RUN go get github.com/docker/go-plugins-helpers/volume
 ADD . /go/src/github.com/manvalls/goofys-docker
 WORKDIR /go/src/github.com/manvalls/goofys-docker
-RUN go get
 RUN go install --ldflags '-extldflags "-static"'
 
 # Final image
@@ -37,5 +38,5 @@ COPY --from=deps /catfs /usr/local/bin
 COPY --from=deps /goofys /usr/local/bin
 COPY --from=driver /go/bin/goofys-docker /usr/local/bin
 
-RUN mkdir -p /run/docker/plugins /mnt/volumes
+RUN mkdir -p /run/docker/plugins /mnt/catfs /mnt/goofys /mnt/cache
 CMD ["/usr/local/bin/goofys-docker"]

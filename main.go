@@ -17,9 +17,9 @@ import (
 
 const (
 	socketAddress = "/run/docker/plugins/goofys.sock"
-	catfsFolder   = "/mnt/catfs/"
-	goofysFolder  = "/mnt/goofys/"
-	cacheFolder   = "/mnt/cache/"
+	catfsFolder   = "/mnt/catfs/volumes/"
+	goofysFolder  = "/mnt/goofys/volumes/"
+	cacheFolder   = "/mnt/cache/volumes/"
 )
 
 var (
@@ -109,17 +109,17 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 			goofysFolder + bucketNamespace + r.Name,
 			cacheFolder + bucketNamespace + r.Name,
 		} {
-			os.MkdirAll(path, 777)
+			os.MkdirAll(path, 0777)
 		}
 
-		err := exec.Command(
+		goofys := exec.Command(
 			"goofys",
 			"-o",
 			"allow_other",
 			"--dir-mode",
-			"777",
+			"0777",
 			"--file-mode",
-			"777",
+			"0777",
 			"--uid",
 			"33",
 			"--gid",
@@ -130,13 +130,32 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 			os.Getenv("AWS_REGION"),
 			bucketNamespace+r.Name,
 			goofysFolder+bucketNamespace+r.Name,
-		).Start()
+		)
+
+		err := goofys.Start()
 
 		if err != nil {
 			return &volume.MountResponse{}, err
 		}
 
-		// TODO: mount catfs
+		goofys.Stdout = os.Stdout
+		goofys.Stderr = os.Stderr
+
+		err = exec.Command(
+			"catfs",
+			"-o",
+			"allow_other",
+			"--free",
+			getEnv("CACHE_FREE", "10G"),
+			"--",
+			goofysFolder+bucketNamespace+r.Name,
+			cacheFolder+bucketNamespace+r.Name,
+			catfsFolder+bucketNamespace+r.Name,
+		).Start()
+
+		if err != nil {
+			return &volume.MountResponse{}, err
+		}
 
 	}
 
@@ -234,6 +253,21 @@ func (d *s3Driver) Capabilities() *volume.CapabilitiesResponse {
 
 func main() {
 
+	for _, path := range []string{
+		catfsFolder,
+		goofysFolder,
+	} {
+		os.RemoveAll(path)
+	}
+
+	for _, path := range []string{
+		catfsFolder,
+		goofysFolder,
+		cacheFolder,
+	} {
+		os.MkdirAll(path, 0777)
+	}
+
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region:   aws.String(os.Getenv("AWS_REGION")),
 		Endpoint: aws.String(os.Getenv("AWS_ENDPOINT")),
@@ -247,6 +281,7 @@ func main() {
 	d := &s3Driver{
 		connections: make(map[string]uint),
 		S3:          s3.New(sess),
+		Mutex:       &sync.Mutex{},
 	}
 
 	h := volume.NewHandler(d)
