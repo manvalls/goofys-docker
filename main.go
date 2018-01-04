@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 
@@ -91,7 +92,53 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 	d.Lock()
 	defer d.Unlock()
 
-	// TODO: mount bucket if not already mounted
+	c, ok := d.connections[r.Name]
+
+	if ok {
+		c++
+	} else {
+		c = 1
+	}
+
+	d.connections[r.Name] = c
+
+	if c == 1 {
+
+		for _, path := range []string{
+			catfsFolder + bucketNamespace + r.Name,
+			goofysFolder + bucketNamespace + r.Name,
+			cacheFolder + bucketNamespace + r.Name,
+		} {
+			os.MkdirAll(path, 777)
+		}
+
+		err := exec.Command(
+			"goofys",
+			"-o",
+			"allow_other",
+			"--dir-mode",
+			"777",
+			"--file-mode",
+			"777",
+			"--uid",
+			"33",
+			"--gid",
+			"33",
+			"--endpoint",
+			os.Getenv("AWS_ENDPOINT"),
+			"--region",
+			os.Getenv("AWS_REGION"),
+			bucketNamespace+r.Name,
+			goofysFolder+bucketNamespace+r.Name,
+		).Start()
+
+		if err != nil {
+			return &volume.MountResponse{}, err
+		}
+
+		// TODO: mount catfs
+
+	}
 
 	return &volume.MountResponse{}, nil
 }
@@ -100,7 +147,33 @@ func (d *s3Driver) Unmount(r *volume.UnmountRequest) error {
 	d.Lock()
 	defer d.Unlock()
 
-	// TODO: unmount volume if no more connections
+	c, ok := d.connections[r.Name]
+
+	if ok {
+		if c == 1 {
+			delete(d.connections, r.Name)
+			c = 0
+		} else {
+			c--
+			d.connections[r.Name] = c
+		}
+	} else {
+		c = 0
+	}
+
+	if c == 0 {
+
+		for _, path := range []string{
+			catfsFolder + bucketNamespace + r.Name,
+			goofysFolder + bucketNamespace + r.Name,
+		} {
+			fuseUnmount := exec.Command("fusermount", "-u", path)
+			fuseUnmount.Start()
+			fuseUnmount.Wait()
+			os.RemoveAll(path)
+		}
+
+	}
 
 	return nil
 }
