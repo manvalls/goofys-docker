@@ -6,31 +6,6 @@
     ],
     "env": [
         {
-            "name": "DEBUG",
-            "settable": [
-                "value"
-            ],
-            "value": "0"
-        },
-        {
-            "name": "http_proxy",
-            "settable": [
-                "value"
-            ]
-        },
-        {
-            "name": "https_proxy",
-            "settable": [
-                "value"
-            ]
-        },
-        {
-            "name": "no_proxy",
-            "settable": [
-                "value"
-            ]
-        },
-        {
             "name": "AWS_ACCESS_KEY_ID",
             "settable": [
                 "value"
@@ -38,6 +13,25 @@
         },
         {
             "name": "AWS_SECRET_ACCESS_KEY",
+            "settable": [
+                "value"
+            ]
+        },
+        {
+            "name": "AWS_NAMESPACE",
+            "value": "goofys_",
+            "settable": [
+                "value"
+            ]
+        },
+        {
+            "name": "AWS_REGION",
+            "settable": [
+                "value"
+            ]
+        },
+        {
+            "name": "AWS_ENDPOINT",
             "settable": [
                 "value"
             ]
@@ -61,30 +55,6 @@
     },
     "mounts": [
         {
-            "destination": "/mnt/state",
-            "options": [
-                "rbind"
-            ],
-            "name": "state",
-            "source": "/var/lib/docker/plugins/",
-            "settable": [
-                "source"
-            ],
-            "type": "bind"
-        },
-        {
-            "destination": "/root/.aws",
-            "options": [
-                "rbind"
-            ],
-            "name": "aws_credential",
-            "source": "",
-            "settable": [
-                "source"
-            ],
-            "type": "bind"
-        },
-        {
             "destination": "/mnt/cache",
             "options": [
                 "rbind"
@@ -100,5 +70,5 @@
     "network": {
         "type": "host"
     },
-    "propagatedmount": "/mnt/volumes"
+    "propagatedmount": "/mnt/catfs"
 }
