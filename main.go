@@ -17,9 +17,9 @@ import (
 
 const (
 	socketAddress = "/run/docker/plugins/goofys.sock"
-	catfsFolder   = "/mnt/catfs/volumes/"
-	goofysFolder  = "/mnt/goofys/volumes/"
-	cacheFolder   = "/mnt/cache/volumes/"
+	catfsFolder   = "/mnt/catfs/"
+	goofysFolder  = "/mnt/goofys/"
+	cacheFolder   = "/mnt/cache/"
 )
 
 var (
@@ -83,9 +83,7 @@ func (d *s3Driver) Path(r *volume.PathRequest) (*volume.PathResponse, error) {
 		return &volume.PathResponse{}, err
 	}
 
-	return &volume.PathResponse{
-		Mountpoint: catfsFolder + bucketNamespace + r.Name,
-	}, nil
+	return &volume.PathResponse{}, nil
 }
 
 func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) {
@@ -105,9 +103,9 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 	if c == 1 {
 
 		for _, path := range []string{
-			catfsFolder + bucketNamespace + r.Name,
-			goofysFolder + bucketNamespace + r.Name,
-			cacheFolder + bucketNamespace + r.Name,
+			catfsFolder + r.Name,
+			goofysFolder + r.Name,
+			cacheFolder + r.Name,
 		} {
 			os.MkdirAll(path, 0777)
 		}
@@ -129,7 +127,7 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 			"--region",
 			os.Getenv("AWS_REGION"),
 			bucketNamespace+r.Name,
-			goofysFolder+bucketNamespace+r.Name,
+			goofysFolder+r.Name,
 		)
 
 		err := goofys.Start()
@@ -148,9 +146,9 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 			"--free",
 			getEnv("CACHE_FREE", "10G"),
 			"--",
-			goofysFolder+bucketNamespace+r.Name,
-			cacheFolder+bucketNamespace+r.Name,
-			catfsFolder+bucketNamespace+r.Name,
+			goofysFolder+r.Name,
+			cacheFolder+r.Name,
+			catfsFolder+r.Name,
 		).Start()
 
 		if err != nil {
@@ -159,7 +157,9 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 
 	}
 
-	return &volume.MountResponse{}, nil
+	return &volume.MountResponse{
+		Mountpoint: catfsFolder + r.Name,
+	}, nil
 }
 
 func (d *s3Driver) Unmount(r *volume.UnmountRequest) error {
@@ -183,8 +183,8 @@ func (d *s3Driver) Unmount(r *volume.UnmountRequest) error {
 	if c == 0 {
 
 		for _, path := range []string{
-			catfsFolder + bucketNamespace + r.Name,
-			goofysFolder + bucketNamespace + r.Name,
+			catfsFolder + r.Name,
+			goofysFolder + r.Name,
 		} {
 			fuseUnmount := exec.Command("fusermount", "-u", path)
 			fuseUnmount.Start()
@@ -211,8 +211,7 @@ func (d *s3Driver) Get(r *volume.GetRequest) (*volume.GetResponse, error) {
 
 	return &volume.GetResponse{
 		Volume: &volume.Volume{
-			Name:       r.Name,
-			Mountpoint: catfsFolder + bucketNamespace + r.Name,
+			Name: r.Name,
 		},
 	}, nil
 }
@@ -234,8 +233,7 @@ func (d *s3Driver) List() (*volume.ListResponse, error) {
 	for _, v := range result.Buckets {
 		if strings.HasPrefix(*v.Name, bucketNamespace) {
 			response.Volumes = append(response.Volumes, &volume.Volume{
-				Name:       strings.TrimPrefix(*v.Name, bucketNamespace),
-				Mountpoint: catfsFolder + *v.Name,
+				Name: strings.TrimPrefix(*v.Name, bucketNamespace),
 			})
 		}
 	}
