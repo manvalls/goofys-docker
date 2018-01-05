@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"os"
-	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -13,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/docker/go-plugins-helpers/volume"
+	"github.com/jacobsa/fuse"
+	goofys "github.com/kahing/goofys/api"
 )
 
 const (
@@ -110,46 +113,36 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 			os.MkdirAll(path, 0777)
 		}
 
-		goofys := exec.Command(
-			"goofys",
-			"-o",
-			"allow_other",
-			"--dir-mode",
-			"0777",
-			"--file-mode",
-			"0777",
-			"--uid",
-			"33",
-			"--gid",
-			"33",
-			"--endpoint",
-			os.Getenv("AWS_ENDPOINT"),
-			"--region",
-			os.Getenv("AWS_REGION"),
+		_, _, err := goofys.Mount(
+			context.Background(),
 			bucketNamespace+r.Name,
-			goofysFolder+r.Name,
+			&goofys.Config{
+				MountOptions: map[string]string{"allow_other": ""},
+				MountPoint:   goofysFolder + r.Name,
+				Cache: []string{
+					"-o",
+					"allow_other",
+					"--free",
+					getEnv("CACHE_FREE", "10G"),
+					"--",
+					goofysFolder + r.Name,
+					cacheFolder + r.Name,
+					catfsFolder + r.Name,
+				},
+
+				DirMode:      os.FileMode(0777),
+				FileMode:     os.FileMode(0777),
+				Gid:          33,
+				Uid:          33,
+				StatCacheTTL: 1 * time.Minute,
+				TypeCacheTTL: 1 * time.Minute,
+
+				StorageClass: "STANDARD",
+				Region:       os.Getenv("AWS_REGION"),
+				Endpoint:     os.Getenv("AWS_ENDPOINT"),
+				Foreground:   true,
+			},
 		)
-
-		err := goofys.Start()
-
-		if err != nil {
-			return &volume.MountResponse{}, err
-		}
-
-		goofys.Stdout = os.Stdout
-		goofys.Stderr = os.Stderr
-
-		err = exec.Command(
-			"catfs",
-			"-o",
-			"allow_other",
-			"--free",
-			getEnv("CACHE_FREE", "10G"),
-			"--",
-			goofysFolder+r.Name,
-			cacheFolder+r.Name,
-			catfsFolder+r.Name,
-		).Start()
 
 		if err != nil {
 			return &volume.MountResponse{}, err
@@ -186,9 +179,7 @@ func (d *s3Driver) Unmount(r *volume.UnmountRequest) error {
 			catfsFolder + r.Name,
 			goofysFolder + r.Name,
 		} {
-			fuseUnmount := exec.Command("fusermount", "-u", path)
-			fuseUnmount.Start()
-			fuseUnmount.Wait()
+			fuse.Unmount(path)
 			os.RemoveAll(path)
 		}
 
