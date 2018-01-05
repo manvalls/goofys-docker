@@ -20,9 +20,9 @@ import (
 
 const (
 	socketAddress = "/run/docker/plugins/goofys.sock"
-	catfsFolder   = "/mnt/catfs/"
-	goofysFolder  = "/mnt/goofys/"
-	cacheFolder   = "/mnt/cache/"
+	catfsFolder   = "/var/lib/driver/catfs/"
+	goofysFolder  = "/var/lib/driver/goofys/"
+	cacheFolder   = "/var/lib/driver/cache/"
 )
 
 var (

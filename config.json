@@ -61,22 +61,9 @@
             }
         ]
     },
-    "mounts": [
-        {
-            "destination": "/mnt/cache",
-            "options": [
-                "rbind"
-            ],
-            "name": "cache",
-            "source": "",
-            "settable": [
-                "source"
-            ],
-            "type": "bind"
-        }
-    ],
+    "mounts": null,
     "network": {
         "type": "host"
     },
-    "propagatedmount": "/mnt/catfs"
+    "propagatedmount": "/var/lib/driver"
 }

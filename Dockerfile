@@ -1,15 +1,14 @@
-# Deps download
+# Catfs build
 
-FROM alpine:latest AS deps
-RUN apk update
+FROM rust AS catfs
+RUN apt-get update
+RUN apt-get -y install libfuse-dev
 
-WORKDIR /
-RUN apk add ca-certificates
-RUN update-ca-certificates
-RUN apk add wget
+WORKDIR /root
+RUN git clone https://github.com/manvalls/catfs.git
 
-RUN wget http://github.com/kahing/catfs/releases/download/v0.6.0/catfs
-RUN chmod a+rwx catfs
+WORKDIR /root/catfs
+RUN cargo install
 
 # Driver build
 
@@ -33,8 +32,8 @@ RUN apt-get update && apt-get install -y \
     fuse musl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=deps /catfs /usr/local/bin
+COPY --from=catfs /usr/local/cargo/bin/catfs /usr/local/bin
 COPY --from=driver /go/bin/goofys-docker /usr/local/bin
 
-RUN mkdir -p /run/docker/plugins /mnt/catfs /mnt/goofys /mnt/cache
+RUN mkdir -p /run/docker/plugins /var/lib/driver/catfs /var/lib/driver/goofys /var/lib/driver/cache
 CMD ["/usr/local/bin/goofys-docker"]
