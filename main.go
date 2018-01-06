@@ -130,8 +130,8 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 					catfsFolder + r.Name,
 				},
 
-				DirMode:      os.FileMode(0777),
-				FileMode:     os.FileMode(0777),
+				DirMode:      os.FileMode(0770),
+				FileMode:     os.FileMode(0770),
 				Gid:          33,
 				Uid:          33,
 				StatCacheTTL: 1 * time.Minute,
