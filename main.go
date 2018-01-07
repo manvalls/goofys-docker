@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -37,7 +39,8 @@ var (
 type s3Driver struct {
 	*sync.Mutex
 	*s3.S3
-	connections map[string]uint
+	connections   map[string]uint
+	contextCancel map[string]func()
 }
 
 func getEnv(key, fallback string) string {
@@ -113,22 +116,22 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 			os.MkdirAll(path, 0777)
 		}
 
+		for _, path := range []string{
+			catfsFolder + r.Name,
+			goofysFolder + r.Name,
+		} {
+			fuse.Unmount(path)
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		d.contextCancel[r.Name] = cancel
+
 		_, _, err := goofys.Mount(
-			context.Background(),
+			ctx,
 			bucketNamespace+r.Name,
 			&goofys.Config{
 				MountOptions: map[string]string{"allow_other": ""},
 				MountPoint:   goofysFolder + r.Name,
-				Cache: []string{
-					"-o",
-					"allow_other",
-					"--free",
-					getEnv("CACHE_FREE", "10G"),
-					"--",
-					goofysFolder + r.Name,
-					cacheFolder + r.Name,
-					catfsFolder + r.Name,
-				},
 
 				DirMode:      os.FileMode(0770),
 				FileMode:     os.FileMode(0770),
@@ -147,6 +150,48 @@ func (d *s3Driver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) 
 		if err != nil {
 			return &volume.MountResponse{}, err
 		}
+
+		channel := make(chan error)
+
+		go func() {
+
+			for {
+
+				cmd := exec.CommandContext(
+					ctx,
+					"catfs",
+					"-o",
+					"allow_other",
+					"--free",
+					getEnv("CACHE_FREE", "10G"),
+					"--",
+					goofysFolder+r.Name,
+					cacheFolder+r.Name,
+					catfsFolder+r.Name,
+				)
+
+				go func() {
+					channel <- cmd.Run()
+				}()
+
+				select {
+
+				case err := <-channel:
+
+					fuse.Unmount(catfsFolder + r.Name)
+
+					if err != nil {
+						fmt.Println("catfs error", err)
+					}
+
+				case <-ctx.Done():
+					return
+
+				}
+
+			}
+
+		}()
 
 	}
 
@@ -175,9 +220,14 @@ func (d *s3Driver) Unmount(r *volume.UnmountRequest) error {
 
 	if c == 0 {
 
+		cancel := d.contextCancel[r.Name]
+		delete(d.contextCancel, r.Name)
+		cancel()
+
 		for _, path := range []string{
 			catfsFolder + r.Name,
 			goofysFolder + r.Name,
+			cacheFolder + r.Name,
 		} {
 			fuse.Unmount(path)
 			os.RemoveAll(path)
@@ -245,15 +295,9 @@ func main() {
 	for _, path := range []string{
 		catfsFolder,
 		goofysFolder,
-	} {
-		os.RemoveAll(path)
-	}
-
-	for _, path := range []string{
-		catfsFolder,
-		goofysFolder,
 		cacheFolder,
 	} {
+		os.RemoveAll(path)
 		os.MkdirAll(path, 0777)
 	}
 
@@ -268,9 +312,10 @@ func main() {
 	}))
 
 	d := &s3Driver{
-		connections: make(map[string]uint),
-		S3:          s3.New(sess),
-		Mutex:       &sync.Mutex{},
+		connections:   make(map[string]uint),
+		contextCancel: make(map[string]func()),
+		S3:            s3.New(sess),
+		Mutex:         &sync.Mutex{},
 	}
 
 	h := volume.NewHandler(d)
